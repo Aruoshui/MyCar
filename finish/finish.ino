@@ -1,9 +1,11 @@
-#include <Servo.h>
-#include <GP2Y0.h>
-#include <Arduino.h>
+
+
+#include <GP2Y0.h> //红外测距，但是没用到
+#include <Arduino.h> //默认包
 #include <string.h>  //字符串处理头文件
-#include "SR04.h"    //超声波测距头文件
-#include <SoftwareSerial.h>
+#include <SoftwareSerial.h> //通讯包
+
+
 
 SoftwareSerial BT(9, 8);  //定义蓝牙串口的引脚，蓝牙只需接4根线，Vcc-5V GND-GND TXD-Pin9 RXD-Pin8
 
@@ -17,35 +19,21 @@ SoftwareSerial BT(9, 8);  //定义蓝牙串口的引脚，蓝牙只需接4根线
 
 
 */
-#include <DFRobot_HuskyLens.h>
+#include <DFRobot_HuskyLens.h> //二哈摄像头
 #include <HUSKYLENS.h>
 #include <HUSKYLENSMindPlus.h>
 #include <HuskyLensProtocolCore.h>
 HUSKYLENS huskylens;
 void printResult(HUSKYLENSResult result);
-//HUSKYLENS green line >> SDA; blue line >> SCL
+//二哈连线方法:green line >> SDA; blue line >> SCL
+
 /***************************end摄像头end****************************/
 
 
 
 /***************************start电机（基础控制）start****************************/
-#define TRIG_PIN_1 18  // 1号超声波18引脚为输入
-#define ECHO_PIN_1 19  // 1号超声波19引脚为控制
+//此处的控制都是依靠驱动板，详情就看文档里边
 
-#define TRIG_PIN_2 24  // 2号超声波24引脚为输入
-#define ECHO_PIN_2 25  // 2号超声波25引脚为控制
-
-#define TRIG_PIN_3 22  // 3号超声波22引脚为输入
-#define ECHO_PIN_3 23  // 3号超声波23引脚为控制
-
-#define TRIG_PIN_4 53  // 4号超声波40引脚为输入
-#define ECHO_PIN_4 52  // 4号超声波39引脚为控制
-
-#define TRIG_PIN_a 28  // a号超声波28引脚为输入
-#define ECHO_PIN_a 29  // a号超声波29引脚为控制
-
-#define TRIG_PIN_b 38  // b号超声波37引脚为输入
-#define ECHO_PIN_b 37  // b号超声波38引脚为控制
 
 const unsigned long interval = 300;  // 测量间隔（毫秒）
 unsigned long previousMillis = 0;
@@ -73,7 +61,6 @@ void zuopian(int zuo, int you)  //300 700
   setcmd2('m', you);
   setcmd2('M', -you);
 }
-
 
 void forward(int qian)  //600
 {
@@ -157,6 +144,7 @@ void setcmd2(unsigned char Cmd_Send, long MotorSpeed) {
 #include <SPI.h>
 #include <string.h>
 #include <Pixy2I2C.h>
+#include <Servo.h> //舵机控制相关
 
 bool leave = false;
 Pixy2I2C pixy;
@@ -400,6 +388,8 @@ float init_speed = 500;  //初始速度为500
 float speed1 = 0;
 float speed2 = 0;
 
+//下面这些注释是设计使用PID控制转角速度的
+
 // /*先通过目标航向角和当前航向角推算出需要多少车轮差速值；再用基础速度加减输出速度;负数是左转、正数是右转*/
 // void angleByPID(int speed, int target) {
 //   unsigned long current_time = millis();
@@ -415,7 +405,7 @@ float speed2 = 0;
 //   float output = angle_Kp * error + angle_Ki * angle_integral + angle_Kd * (error - angle_prev_error) / dt;
 //   angle_prev_error = error;
 //   angle_integral += error * dt;
-
+//
 //   /* 对积分项进行限制 */
 //   float integral_limit = 100.0;
 //   if (angle_integral > integral_limit) {
@@ -440,8 +430,8 @@ float speed2 = 0;
 //   }
 //   resetAnglePID();
 // }
-
-/*先通过目标航向角和当前航向角推算出需要多少车轮差速值；再用基础速度加减输出速度;负数是左转、正数是右转*/
+//
+///*先通过目标航向角和当前航向角推算出需要多少车轮差速值；再用基础速度加减输出速度;负数是左转、正数是右转*/
 // void angleByPID(int speed, int target) {
 //   Serial.println("");
 //   unsigned long current_time = millis();
@@ -457,7 +447,7 @@ float speed2 = 0;
 //   float output = angle_Kp * error + angle_Ki * angle_integral + angle_Kd * (error - angle_prev_error) / dt;
 //   angle_prev_error = error;
 //   angle_integral += error * dt;
-
+//
 //   /* 对积分项进行限制 */
 //   float integral_limit = 100.0;
 //   if (angle_integral > integral_limit) {
@@ -494,13 +484,16 @@ float speed2 = 0;
 //   }
 //   resetAnglePID();
 // }
-
+//
 // /*重置控制器状态*/
 // void resetAnglePID() {
 //   angle_prev_error = 0;
 //   angle_integral = 0;
 //   angle_prev_time = millis();
 // }
+
+  
+        /***************************MPU9250传感器相关，其实就是度角度，我们这里是github上学习的姿态解算的源代码，没有库，但是原理需要知道****************************/
 
 void callibrate() {
   Serial.println("Callibrating");
@@ -572,6 +565,7 @@ float getPitchAngle() {
   filter();
   return angle_pitch;  // 返回角度值
 }
+          /***************************MPU9250传感器相关****************************/
 
 /*左转90度*/
 void leftWithYaw(int target_yaw) {
@@ -615,7 +609,7 @@ void rightWithYaw1(int target_yaw) {
   } while (abs(current_yaw - init_yaw) < target_yaw);
 }
 
-
+        /***************************通过角度对左转右转控制，增快速度，消除惯性影响****************************/
 // /*左转90度*/
 // void leftWithYawPID() {
 //   float init_yaw = getPitchAngle();
@@ -654,7 +648,7 @@ void rightWithYaw1(int target_yaw) {
 //     Serial.println(current_yaw);
 //   } while (abs(current_yaw - init_yaw) < differ);
 // }
-
+          /***************************通过角度对左转右转控制，增快速度，消除惯性影响****************************/
 
 /***************************end陀螺仪（角度控制）end****************************/
 //
@@ -672,6 +666,27 @@ void rightWithYaw1(int target_yaw) {
 
 
 */
+
+#include "SR04.h"    //超声波测距头文件
+
+#define TRIG_PIN_1 18  // 1号超声波18引脚为输入
+#define ECHO_PIN_1 19  // 1号超声波19引脚为控制
+
+#define TRIG_PIN_2 24  // 2号超声波24引脚为输入
+#define ECHO_PIN_2 25  // 2号超声波25引脚为控制
+
+#define TRIG_PIN_3 22  // 3号超声波22引脚为输入
+#define ECHO_PIN_3 23  // 3号超声波23引脚为控制
+
+#define TRIG_PIN_4 53  // 4号超声波40引脚为输入
+#define ECHO_PIN_4 52  // 4号超声波39引脚为控制
+
+#define TRIG_PIN_a 28  // a号超声波28引脚为输入
+#define ECHO_PIN_a 29  // a号超声波29引脚为控制
+
+#define TRIG_PIN_b 38  // b号超声波37引脚为输入
+#define ECHO_PIN_b 37  // b号超声波38引脚为控制
+
 float measureDistance(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -684,7 +699,7 @@ float measureDistance(int trigPin, int echoPin) {
 
   return distance;
 }
-//卡曼尔滤波算法
+//卡曼尔滤波算法,测距更加稳定
 float klm(int trigPin, int echoPin) {
 
   digitalWrite(trigPin, LOW);
@@ -709,7 +724,7 @@ float klm(int trigPin, int echoPin) {
   P = P_ - K * P_;
   return X;
 }
-//教材滤波
+//教材上使用的滤波
 float calculateDistance(int distype) {
   float distances[10];
   switch (distype) {
@@ -941,10 +956,12 @@ void setup() {
   Serial3.write(0x55);
   delay(10);
 
+      /***************************MPU9250传感器的初始化****************************/
   Wire.begin();
   TWBR = 12;  // Set I2C frequency to 400kHz
   init_gyro();
   delay(20);
+      /***************************MPU9250传感器的初始化****************************/
 
   pinMode(TRIG_PIN_1, OUTPUT);
   pinMode(ECHO_PIN_1, INPUT);
@@ -964,7 +981,9 @@ void setup() {
   pinMode(TRIG_PIN_b, OUTPUT);
   pinMode(ECHO_PIN_b, INPUT);
 
-  pixy.init();
+  pixy.init(); //pixy摄像头
+
+      /***************************机械臂初始化****************************/
   base.attach(4);
   dabi.attach(5);
   xiaobi.attach(6);
@@ -973,13 +992,16 @@ void setup() {
   dabi.write(dabiFromPos);
   xiaobi.write(xiaobiFromPos);
   claw.write(clawFromPos);  //抓紧
-  Serial.println("陀螺仪初始化完成");
+      /***************************机械臂初始化****************************/
+
+      /***************************二哈摄像头初始化****************************/
   Wire.begin();
   huskylens.begin(Wire);
   huskylens.request();
   huskylens.isLearned();
   huskylens.available();
   Serial.println("Begin success!");
+      /***************************二哈摄像头初始化****************************/
 }
 /***************************end各部件初始化end****************************/
 //
